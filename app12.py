@@ -12,14 +12,16 @@ import soundfile as sf  # Make sure to add soundfile to your requirements
 
 
 audio_data = None  # To hold the recorded audio
-
+recording_finished = False
 audio_frames = []
 
 def audio_frame_callback(frame):
-    global audio_frames
-    # Append the raw audio frame data (in 's16le' format) to the list.
-    audio_frames.append(frame.to_ndarray(format="s16le"))
-    return frame  # Return the original frame unchanged===
+    global audio_frames, recording_finished
+    if not recording_finished:
+        # Append each frame's raw audio data in 's16le' format
+        audio_frames.append(frame.to_ndarray(format="s16le"))
+    return frame  # Return the original frame unmodified
+
 # 🎨 Streamlit Configuration
 # =====================
 st.set_page_config(page_title="Drunk Detection", layout="wide")
@@ -124,9 +126,10 @@ if option == "Upload Audio File":
 
 elif option == "Record Audio":
     st.write("### 🎙️ Record Your Audio")
-
-    # Clear any previous frames
+    
+    # Clear any previous frames and reset the flag
     audio_frames.clear()
+    recording_finished = False
 
     webrtc_ctx = webrtc_streamer(
         key="recording",
@@ -136,28 +139,30 @@ elif option == "Record Audio":
         audio_frame_callback=audio_frame_callback,
     )
 
-    if st.button("Finish Recording"):
-        # Stop the WebRTC stream to finalize recording
-        if webrtc_ctx is not None:
-            webrtc_ctx.stop()
+    # Provide a button for the user to finish recording.
+    if st.button("Stop Recording"):
+        # Set flag to stop accumulating further frames.
+        recording_finished = True
         
         st.write("Number of frames recorded:", len(audio_frames))
         if audio_frames:
-            # Concatenate all frames along the time axis
+            # Concatenate all frames along the time axis.
             audio_data = np.concatenate(audio_frames, axis=0)
             
-            # Write the combined audio using soundfile
+            # Save the combined audio using the soundfile library.
+            import soundfile as sf
             temp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".wav").name
             sf.write(temp_path, audio_data, 44100, subtype='PCM_16')
             
             st.audio(temp_path, format="audio/wav")
             
-            # Process the recorded audio
+            # Process the recorded audio and show prediction.
             features = extract_features(temp_path)
             if features is not None:
                 show_prediction(features)
         else:
             st.warning("No audio recorded.")
+
 
 
 # =====================
