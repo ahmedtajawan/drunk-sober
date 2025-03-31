@@ -4,9 +4,17 @@ import numpy as np
 import joblib
 import tempfile
 from pydub import AudioSegment
-from st_audiorecorder import audiorecorder
+from streamlit_webrtc import webrtc_streamer, WebRtcMode, ClientSettings
+import av
 import wavio
+import os
 
+audio_data = None  # To hold the recorded audio
+
+def audio_frame_callback(frame):
+    global audio_data
+    audio_data = frame.to_ndarray()
+    return av.AudioFrame.from_ndarray(audio_data, layout="mono")
 # =====================
 # 🎨 Streamlit Configuration
 # =====================
@@ -100,18 +108,27 @@ if option == "Upload Audio File":
         if features is not None:
             show_prediction(features)
 
-elif option == "Record Audio":
+if option == "Record Audio":
     st.write("### 🎙️ Record Your Audio")
-    audio = audiorecorder("Click to record", "Recording...")
-    
-    if audio:
-        st.write("✅ Recording complete! Processing...")
+
+    webrtc_ctx = webrtc_streamer(
+        key="recording",
+        mode=WebRtcMode.SENDRECV,
+        client_settings=ClientSettings(
+            rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
+            media_stream_constraints={"audio": True, "video": False},
+        ),
+        audio_frame_callback=audio_frame_callback,
+    )
+
+    if audio_data is not None:
+        # Save the recorded audio to a temporary file
         temp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".wav").name
-        with open(temp_path, "wb") as f:
-            f.write(audio.tobytes())
+        wavio.write(temp_path, audio_data, 44100, sampwidth=2)
         
         st.audio(temp_path, format="audio/wav")
         
+        # Process the recorded audio
         features = extract_features(temp_path)
         if features is not None:
             show_prediction(features)
