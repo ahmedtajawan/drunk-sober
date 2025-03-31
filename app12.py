@@ -95,14 +95,17 @@ elif input_method == "Live Recording":
     st.sidebar.write("3. Click 'Stop'")
     
     ctx = webrtc_streamer(
-        key="recorder",
-        mode=WebRtcMode.SENDONLY,
-        client_settings=ClientSettings(
-            rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
-            media_stream_constraints={"audio": True},
-        ),
-        audio_frame_callback=audio_frame_callback,
-    )
+    key="recorder",
+    mode=WebRtcMode.SENDONLY,
+    client_settings=ClientSettings(
+        rtc_configuration={
+            "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
+        },
+        media_stream_constraints={"audio": True},
+    ),
+    audio_frame_callback=audio_frame_callback,
+    async_processing=True,  # Add this line
+)
 
     # Process after recording stops
     if ctx and not ctx.state.playing:
