@@ -128,43 +128,19 @@ if option == "Upload Audio File":
 
 elif option == "Record Audio":
     st.write("### 🎙️ Record Your Audio")
+    audio_file = st.audio_input("Press record to capture your audio")
     
-    # Clear any previous frames and reset the flag
-    audio_frames.clear()
-    recording_finished = False
-
-    webrtc_ctx = webrtc_streamer(
-        key="recording",
-        mode=WebRtcMode.SENDRECV,
-        rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
-        media_stream_constraints={"audio": True, "video": False},
-      
-        audio_frame_callback=audio_frame_callback,
-    )
-
-    # Provide a button for the user to finish recording.
-    if st.button("Stop Recording"):
-        # Set flag to stop accumulating further frames.
-        recording_finished = True
+    if audio_file is not None:
+        # Save the recorded audio data to a temporary file
+        temp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".wav").name
+        with open(temp_path, "wb") as f:
+            f.write(audio_file.read())
+        st.audio(temp_path)
         
-        st.write("Number of frames recorded:", len(audio_frames))
-        if audio_frames:
-            # Concatenate all frames along the time axis.
-            audio_data = np.concatenate(audio_frames, axis=0)
-            
-            # Save the combined audio using the soundfile library.
-            import soundfile as sf
-            temp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".wav").name
-            sf.write(temp_path, audio_data, 44100, subtype='PCM_16')
-            
-            st.audio(temp_path, format="audio/wav")
-            
-            # Process the recorded audio and show prediction.
-            features = extract_features(temp_path)
-            if features is not None:
-                show_prediction(features)
-        else:
-            st.warning("No audio recorded.")
+        # Extract features and show prediction
+        features = extract_features(temp_path)
+        if features is not None:
+            show_prediction(features)
 
 
 
