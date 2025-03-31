@@ -136,24 +136,29 @@ elif option == "Record Audio":
         audio_frame_callback=audio_frame_callback,
     )
 
-    # Provide a button to finish recording and process audio.
     if st.button("Finish Recording"):
+        # Stop the WebRTC stream to finalize recording
+        if webrtc_ctx is not None:
+            webrtc_ctx.stop()
+        
+        st.write("Number of frames recorded:", len(audio_frames))
         if audio_frames:
-            # Concatenate all the frames along axis 0.
+            # Concatenate all frames along the time axis
             audio_data = np.concatenate(audio_frames, axis=0)
             
-            # Write the combined audio data to a temporary WAV file using soundfile.
+            # Write the combined audio using soundfile
             temp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".wav").name
             sf.write(temp_path, audio_data, 44100, subtype='PCM_16')
             
             st.audio(temp_path, format="audio/wav")
             
-            # Process the recorded audio.
+            # Process the recorded audio
             features = extract_features(temp_path)
             if features is not None:
                 show_prediction(features)
         else:
             st.warning("No audio recorded.")
+
 
 # =====================
 # Footer
