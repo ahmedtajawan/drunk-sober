@@ -1,5 +1,1 @@
-ffmpeg
-libsndfile1
-libavdevice58
-libavformat58
-libavcodec58
+
