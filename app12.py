@@ -115,7 +115,7 @@ elif option == "Record Audio":
         audio_frame_callback=audio_frame_callback,
     )
 
-    if webrtc_ctx and webrtc_ctx.state.stopped:
+    if webrtc_ctx and (webrtc_ctx.state.ice_connection_state == "closed" or not webrtc_ctx.state.playing):
         if len(st.session_state.audio_buffer) > 0:
             audio_array = np.concatenate(st.session_state.audio_buffer)
             temp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".wav").name
