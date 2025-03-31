@@ -6,24 +6,12 @@ import joblib
 import tempfile
 from pydub import AudioSegment
 
-from streamlit_webrtc import webrtc_streamer, WebRtcMode, ClientSettings
-import av
+
 from io import BytesIO
 import soundfile as sf  # Make sure to add soundfile to your requirements
 
 
-audio_data = None  # To hold the recorded audio
-recording_finished = False
-audio_frames = []
 
-def audio_frame_callback(frame):
-    global audio_frames, recording_finished
-    if not recording_finished:
-        frame_data = frame.to_ndarray(format="s16le")
-        audio_frames.append(frame_data)
-        # For debugging: print frame shape to console (visible in browser console)
-        print("Captured frame with shape:", frame_data.shape)
-    return frame
 # 🎨 Streamlit Configuration
 # =====================
 st.set_page_config(page_title="Drunk Detection", layout="wide")
