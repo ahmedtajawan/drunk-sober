@@ -115,6 +115,7 @@ if option == "Upload Audio File":
 elif option == "Record Audio":
     st.write("### 🎙️ Record Your Audio")
 
+    # Start the WebRTC streamer to record audio frames
     webrtc_ctx = webrtc_streamer(
         key="recording",
         mode=WebRtcMode.SENDRECV,
@@ -122,12 +123,16 @@ elif option == "Record Audio":
         media_stream_constraints={"audio": True, "video": False},
         audio_frame_callback=audio_frame_callback,
     )
-
-
-    if audio_data is not None:
-        # Save the recorded audio to a temporary file
+    
+    # Check if any audio frames were captured (you might want to provide a button to finalize recording)
+    if len(audio_frames) > 0:
+        # Concatenate all audio frames along the first axis
+        audio_data = np.concatenate(audio_frames, axis=0)
+        
+        # Write the combined audio to a temporary .wav file using soundfile
+        import soundfile as sf
         temp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".wav").name
-        wavio.write(temp_path, audio_data, 44100, sampwidth=2)
+        sf.write(temp_path, audio_data, 44100, subtype='PCM_16')
         
         st.audio(temp_path, format="audio/wav")
         
@@ -135,6 +140,7 @@ elif option == "Record Audio":
         features = extract_features(temp_path)
         if features is not None:
             show_prediction(features)
+
 
 # =====================
 # Footer
