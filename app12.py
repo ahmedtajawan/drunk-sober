@@ -115,13 +115,13 @@ if option == "Upload Audio File":
 elif option == "Record Audio":
     st.write("### 🎙️ Record Your Audio")
 
- webrtc_ctx = webrtc_streamer(
-    key="recording",
-    mode=WebRtcMode.SENDRECV,
-    rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
-    media_stream_constraints={"audio": True, "video": False},
-    audio_frame_callback=audio_frame_callback,
-)
+    webrtc_ctx = webrtc_streamer(
+        key="recording",
+        mode=WebRtcMode.SENDRECV,
+        rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
+        media_stream_constraints={"audio": True, "video": False},
+        audio_frame_callback=audio_frame_callback,
+    )
 
 
     if audio_data is not None:
