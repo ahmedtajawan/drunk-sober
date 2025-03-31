@@ -134,7 +134,7 @@ elif option == "Record Audio":
 
     webrtc_ctx = webrtc_streamer(
         key="recording",
-        mode=WebRtcMode.SENDONLY,
+        mode=WebRtcMode.SENDRECV,
         rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
         media_stream_constraints={"audio": True, "video": False},
       
