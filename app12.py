@@ -84,16 +84,6 @@ def show_prediction(features):
     st.markdown(f"- **Condition**: `{drunk_label.upper()}` ({drunk_conf:.2f}% confidence)")
 
 
-# =====================
-# 🎤 Recording Function
-# =====================
-def record_audio(duration=5, fs=44100):
-    st.write(f"🎙️ Recording for {duration} seconds...")
-    recording = sd.rec(int(duration * fs), samplerate=fs, channels=1)
-    sd.wait()  # Wait until recording is finished
-    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
-    wavio.write(temp_file.name, recording, fs, sampwidth=2)
-    return temp_file.name
 
 
 # =====================
