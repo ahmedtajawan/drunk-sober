@@ -116,7 +116,7 @@ if option == "Upload Audio File":
 
 elif option == "Record Audio":
     st.write("### 🎙️ Record Your Audio")
-    audio_file = st.audio_input("Press record to capture your audio")
+    audio_file = st.experimental_audio_input("Press record to capture your audio")
     
     if audio_file is not None:
         # Save the recorded audio data to a temporary file
