@@ -2,6 +2,7 @@ streamlit
 librosa
 numpy
 pydub
-sounddevice
 wavio
 scikit-learn
+streamlit-webrtc
+av
