@@ -1,5 +1,5 @@
 streamlit
-librosa
+librosa==0.8.0
 numpy
 pydub
 wavio
