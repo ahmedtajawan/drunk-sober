@@ -51,6 +51,13 @@ def load_audio(file_path):
 # =====================
 # 🔍 Feature Extraction
 # =====================
+import pandas as pd
+
+# Define the column names in the same order as during model training
+COLUMN_NAMES = [f"mfcc_mean_{i}" for i in range(13)] + \
+               [f"mfcc_std_{i}" for i in range(13)] + \
+               ["zcr", "rms", "centroid", "tempo"]
+
 def extract_features(path):
     try:
         y, sr = load_audio(path)
@@ -60,7 +67,7 @@ def extract_features(path):
             st.warning("⚠️ Audio is too short for feature extraction.")
             return None
 
-        # Extract Features
+        # Extract features
         mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
         mfcc_mean = np.mean(mfcc, axis=1).tolist()
         mfcc_std = np.std(mfcc, axis=1).tolist()
@@ -70,7 +77,8 @@ def extract_features(path):
         tempo = float(librosa.beat.beat_track(y=y, sr=sr)[0])
 
         features = mfcc_mean + mfcc_std + [zcr, rms, centroid, tempo]
-        return np.array(features).reshape(1, -1)
+        # Convert to a DataFrame with column names:
+        return pd.DataFrame([features], columns=COLUMN_NAMES)
     except Exception as e:
         st.error(f"Error extracting features: {e}")
         return None
