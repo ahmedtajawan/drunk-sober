@@ -4,7 +4,7 @@ import numpy as np
 import joblib
 import tempfile
 from pydub import AudioSegment
-import sounddevice as sd
+from st_audiorecorder import audiorecorder
 import wavio
 
 # =====================
@@ -78,18 +78,6 @@ def show_prediction(features):
 
 
 # =====================
-# 🎤 Recording Function
-# =====================
-def record_audio(duration=5, fs=44100):
-    st.write(f"🎙️ Recording for {duration} seconds...")
-    recording = sd.rec(int(duration * fs), samplerate=fs, channels=1)
-    sd.wait()  # Wait until recording is finished
-    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
-    wavio.write(temp_file.name, recording, fs, sampwidth=2)
-    return temp_file.name
-
-
-# =====================
 # 📤 File Upload Section
 # =====================
 st.title("🎤 Drunk/Sober Classifier")
@@ -113,10 +101,17 @@ if option == "Upload Audio File":
             show_prediction(features)
 
 elif option == "Record Audio":
-    duration = st.sidebar.slider("Select Recording Duration (seconds)", min_value=3, max_value=15, value=5)
-    if st.sidebar.button("🎙️ Start Recording"):
-        temp_path = record_audio(duration=duration)
-        st.audio(temp_path)
+    st.write("### 🎙️ Record Your Audio")
+    audio = audiorecorder("Click to record", "Recording...")
+    
+    if audio:
+        st.write("✅ Recording complete! Processing...")
+        temp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".wav").name
+        with open(temp_path, "wb") as f:
+            f.write(audio.tobytes())
+        
+        st.audio(temp_path, format="audio/wav")
+        
         features = extract_features(temp_path)
         if features is not None:
             show_prediction(features)
