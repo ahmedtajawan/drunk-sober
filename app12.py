@@ -10,10 +10,13 @@ import av
 
 audio_data = None  # To hold the recorded audio
 
+audio_frames = []
+
 def audio_frame_callback(frame):
-    global audio_data
-    audio_data = frame.to_ndarray(format="s16le")
-    return av.AudioFrame.from_ndarray(audio_data, layout="mono")
+    global audio_frames
+    # Append each frame’s data to the list
+    audio_frames.append(frame.to_ndarray(format="s16le"))
+    return frame
 # =====================
 # 🎨 Streamlit Configuration
 # =====================
@@ -112,15 +115,14 @@ if option == "Upload Audio File":
 elif option == "Record Audio":
     st.write("### 🎙️ Record Your Audio")
 
-    webrtc_ctx = webrtc_streamer(
-        key="recording",
-        mode=WebRtcMode.SENDRECV,
-        client_settings=ClientSettings(
-            rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
-            media_stream_constraints={"audio": True, "video": False},
-        ),
-        audio_frame_callback=audio_frame_callback,
-    )
+ webrtc_ctx = webrtc_streamer(
+    key="recording",
+    mode=WebRtcMode.SENDRECV,
+    rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
+    media_stream_constraints={"audio": True, "video": False},
+    audio_frame_callback=audio_frame_callback,
+)
+
 
     if audio_data is not None:
         # Save the recorded audio to a temporary file
