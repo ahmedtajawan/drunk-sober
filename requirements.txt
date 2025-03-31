@@ -5,6 +5,6 @@ librosa==0.8.0                    # Works well with numpy 1.23.5
 numpy==1.23.5                     # Compatible with librosa 0.8.0
 pydub==0.25.1
 wavio==0.0.9
-scikit-learn==0.24.2              # Matches your pickled model
+scikit-learn==1.5.1            # Matches your pickled model
 av==9.0.0                         # Compatible with streamlit-webrtc
 altair==4.1.0
