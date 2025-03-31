@@ -4,7 +4,7 @@ import numpy as np
 import joblib
 import tempfile
 from pydub import AudioSegment
-import wavio
+
 from streamlit_webrtc import webrtc_streamer, WebRtcMode, ClientSettings
 import av
 from io import BytesIO
