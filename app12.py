@@ -137,7 +137,7 @@ elif option == "Record Audio":
         mode=WebRtcMode.SENDONLY,
         rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
         media_stream_constraints={"audio": True, "video": False},
-        disable_audio_playback=True,
+      
         audio_frame_callback=audio_frame_callback,
     )
 
