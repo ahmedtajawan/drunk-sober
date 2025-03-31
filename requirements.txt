@@ -1,6 +1,6 @@
-streamlit
+streamlit==1.44.0
 librosa==0.8.0
-numpy
+numpy==1.19.5  # Compatible with librosa 0.8.0
 pydub
 wavio
 scikit-learn
