@@ -1,3 +1,5 @@
 ffmpeg
 libsndfile1
-libasound2-dev
+libavdevice58
+libavformat58
+libavcodec58
