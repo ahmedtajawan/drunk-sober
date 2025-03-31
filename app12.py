@@ -1,127 +1,128 @@
-import streamlit as st
+eamlit as st
 import librosa
 import numpy as np
 import joblib
 import tempfile
-import os
 from pydub import AudioSegment
-from streamlit_webrtc import webrtc_streamer, WebRtcMode, ClientSettings
-import av
-import soundfile as sf
+import sounddevice as sd
+import wavio
 
-# Configuration
+# =====================
+# 🎨 Streamlit Configuration
+# =====================
 st.set_page_config(page_title="Drunk Detection", layout="wide")
 
-# Load models
+# =====================
+# 🎯 Load Models and Encoders
+# =====================
 try:
-    model = joblib.load("model_drunk.pkl")
-    le = joblib.load("label_encoder_drunk.pkl")
+    model_drunk = joblib.load("model_drunk.pkl")
+    le_drunk = joblib.load("label_encoder_drunk.pkl")
 except FileNotFoundError as e:
-    st.error(f"Model Error: {str(e)}")
+    st.error(f"❌ Model or label encoder file not found:\n{e}")
     st.stop()
 
-# Session state initialization
-if "audio_buffer" not in st.session_state:
-    st.session_state.audio_buffer = []
 
-# Audio processing functions
+# =====================
+# 📁 Audio Loading Function
+# =====================
 def load_audio(file_path):
     if file_path.endswith(".mp3"):
         audio = AudioSegment.from_file(file_path, format="mp3")
         audio.export("temp.wav", format="wav")
         file_path = "temp.wav"
+
     y, sr = librosa.load(file_path, sr=None)
     return y, sr
 
+
+# =====================
+# 🔍 Feature Extraction
+# =====================
 def extract_features(path):
     try:
         y, sr = load_audio(path)
         y, _ = librosa.effects.trim(y)
-        
+
         if len(y) < sr:
-            st.warning("Audio too short (min 1sec required)")
+            st.warning("⚠️ Audio is too short for feature extraction.")
             return None
 
+        # Extract Features
         mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
-        features = np.concatenate([
-            np.mean(mfcc, axis=1),
-            np.std(mfcc, axis=1),
-            [np.mean(librosa.feature.zero_crossing_rate(y))],
-            [np.mean(librosa.feature.rms(y=y))],
-            [np.mean(librosa.feature.spectral_centroid(y=y, sr=sr))],
-            [librosa.beat.beat_track(y=y, sr=sr)[0]]
-        ])
-        return features.reshape(1, -1)
+        mfcc_mean = np.mean(mfcc, axis=1).tolist()
+        mfcc_std = np.std(mfcc, axis=1).tolist()
+        zcr = float(np.mean(librosa.feature.zero_crossing_rate(y)))
+        rms = float(np.mean(librosa.feature.rms(y=y)))
+        centroid = float(np.mean(librosa.feature.spectral_centroid(y=y, sr=sr)))
+        tempo = float(librosa.beat.beat_track(y=y, sr=sr)[0])
+
+        features = mfcc_mean + mfcc_std + [zcr, rms, centroid, tempo]
+        return np.array(features).reshape(1, -1)
     except Exception as e:
-        st.error(f"Feature Error: {str(e)}")
+        st.error(f"Error extracting features: {e}")
         return None
 
+
+# =====================
+# 🧠 Show Prediction
+# =====================
 def show_prediction(features):
-    try:
-        probs = model.predict_proba(features)[0]
-        pred_idx = np.argmax(probs)
-        label = le.inverse_transform([pred_idx])[0]
-        confidence = probs[pred_idx] * 100
-        st.success(f"Result: {label.upper()} ({confidence:.1f}% confidence)")
-    except Exception as e:
-        st.error(f"Prediction Error: {str(e)}")
+    drunk_probs = model_drunk.predict_proba(features)[0]
+    drunk_idx = np.argmax(drunk_probs)
+    drunk_label = le_drunk.inverse_transform([drunk_idx])[0]
+    drunk_conf = drunk_probs[drunk_idx] * 100
 
-# WebRTC callback
-def audio_frame_callback(frame: av.AudioFrame) -> av.AudioFrame:
-    array = frame.to_ndarray(format="f32le")
-    st.session_state.audio_buffer.append(array)
-    return frame
+    st.success("🧠 Prediction Results")
+    st.markdown(f"- **Condition**: `{drunk_label.upper()}` ({drunk_conf:.2f}% confidence)")
 
-# Main app
-st.title("🎤 Alcohol Impairment Detector")
-input_method = st.sidebar.radio("Input Method", ("Upload File", "Live Recording"))
 
-if input_method == "Upload File":
-    uploaded = st.sidebar.file_uploader("Upload audio (WAV/MP3)", type=["wav", "mp3"])
-    if uploaded:
+# =====================
+# 🎤 Recording Function
+# =====================
+def record_audio(duration=5, fs=44100):
+    st.write(f"🎙️ Recording for {duration} seconds...")
+    recording = sd.rec(int(duration * fs), samplerate=fs, channels=1)
+    sd.wait()  # Wait until recording is finished
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+    wavio.write(temp_file.name, recording, fs, sampwidth=2)
+    return temp_file.name
+
+
+# =====================
+# 📤 File Upload Section
+# =====================
+st.title("🎤 Drunk/Sober Classifier")
+
+# Sidebar for Uploading or Recording
+option = st.sidebar.radio("Choose Audio Input Method", ("Upload Audio File", "Record Audio"))
+
+temp_path = None
+
+if option == "Upload Audio File":
+    st.sidebar.write("### 📂 Upload Audio File")
+    uploaded_file = st.sidebar.file_uploader("Upload a .wav or .mp3 audio file", type=["wav", "mp3"])
+
+    if uploaded_file is not None:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
-            f.write(uploaded.read())
+            f.write(uploaded_file.read())
             temp_path = f.name
         st.audio(temp_path)
         features = extract_features(temp_path)
         if features is not None:
             show_prediction(features)
-        os.unlink(temp_path)
 
-elif input_method == "Live Recording":
-    st.sidebar.markdown("### Recording Instructions")
-    st.sidebar.write("1. Click 'Start Recording'")
-    st.sidebar.write("2. Speak for 5-10 seconds")
-    st.sidebar.write("3. Click 'Stop'")
-    
-    ctx = webrtc_streamer(
-    key="recorder",
-    mode=WebRtcMode.SENDONLY,
-    client_settings=ClientSettings(
-        rtc_configuration={
-            "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
-        },
-        media_stream_constraints={"audio": True},
-    ),
-    audio_frame_callback=audio_frame_callback,
-    async_processing=True,  # Add this line
-)
+elif option == "Record Audio":
+    duration = st.sidebar.slider("Select Recording Duration (seconds)", min_value=3, max_value=15, value=5)
+    if st.sidebar.button("🎙️ Start Recording"):
+        temp_path = record_audio(duration=duration)
+        st.audio(temp_path)
+        features = extract_features(temp_path)
+        if features is not None:
+            show_prediction(features)
 
-    # Process after recording stops
-    if ctx and not ctx.state.playing:
-        if len(st.session_state.audio_buffer) > 0:
-            try:
-                audio = np.concatenate(st.session_state.audio_buffer)
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
-                    sf.write(f.name, audio, 44100, subtype='PCM_16')
-                    st.audio(f.name)
-                    features = extract_features(f.name)
-                    if features is not None:
-                        show_prediction(features)
-            finally:
-                st.session_state.audio_buffer = []
-                if os.path.exists(f.name):
-                    os.unlink(f.name)
-
+# =====================
+# Footer
+# =====================
 st.markdown("---")
-st.caption("AI-powered voice analysis system")
+st.caption("Built with ❤️ using Streamlit, Librosa, and Scikit-learn")
