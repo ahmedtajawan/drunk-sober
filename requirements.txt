@@ -1,11 +1,11 @@
-streamlit==1.4.0                # Do not use 1.10.0 or above
-streamlit-webrtc==0.35.0        # This version is compatible with streamlit 1.4.0
-protobuf==3.20.3                # Compatible with both Streamlit and streamlit-webrtc
+streamlit==1.4.0                # Compatible with streamlit-webrtc 0.35.0
+streamlit-webrtc==0.35.0
+protobuf==3.20.3
 librosa==0.8.0
 numpy==1.19.5                   # Compatible with librosa 0.8.0
 scipy==1.5.4                    # Compatible with numpy 1.19.5
 scikit-learn==0.24.2            # Compatible with your model file
 pydub==0.25.1
 wavio
-av==8.0.3                       # Compatible with streamlit-webrtc 0.35.0
+av==9.2.0                       # Compatible with Linux-based environment
 altair==4.1.0
