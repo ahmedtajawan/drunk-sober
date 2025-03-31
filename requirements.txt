@@ -4,5 +4,5 @@ numpy
 pydub
 wavio
 scikit-learn
-streamlit-webrtc
+streamlit-webrtc==0.42.0
 av
