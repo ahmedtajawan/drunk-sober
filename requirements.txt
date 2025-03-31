@@ -5,5 +5,5 @@ joblib==1.2.0
 pydub==0.25.1
 streamlit-webrtc==0.44.4
 soundfile==0.12.1
-pyav==11.4.1
+pyav==10.0.0 
 typing-extensions==4.5.0
