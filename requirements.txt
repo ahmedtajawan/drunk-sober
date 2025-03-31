@@ -6,5 +6,5 @@ numpy==1.23.5                 # Compatible with librosa 0.8.0
 pydub==0.25.1
 wavio==0.0.9
 scikit-learn==0.24.2          # To match your pickled model version
-av==8.0.3                     # Latest compatible version
+av==9.0.0                     # Compatible with streamlit-webrtc (Use binary wheels)
 altair==4.1.0                 # Compatible with Streamlit 1.12.0
