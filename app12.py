@@ -7,6 +7,9 @@ from pydub import AudioSegment
 import wavio
 from streamlit_webrtc import webrtc_streamer, WebRtcMode, ClientSettings
 import av
+from io import BytesIO
+import soundfile as sf  # Make sure to add soundfile to your requirements
+
 
 audio_data = None  # To hold the recorded audio
 
@@ -14,10 +17,9 @@ audio_frames = []
 
 def audio_frame_callback(frame):
     global audio_frames
-    # Append each frame’s data to the list
+    # Append the raw audio frame data (in 's16le' format) to the list.
     audio_frames.append(frame.to_ndarray(format="s16le"))
-    return frame
-# =====================
+    return frame  # Return the original frame unchanged===
 # 🎨 Streamlit Configuration
 # =====================
 st.set_page_config(page_title="Drunk Detection", layout="wide")
@@ -115,7 +117,9 @@ if option == "Upload Audio File":
 elif option == "Record Audio":
     st.write("### 🎙️ Record Your Audio")
 
-    # Start the WebRTC streamer to record audio frames
+    # Clear any previous frames
+    audio_frames.clear()
+
     webrtc_ctx = webrtc_streamer(
         key="recording",
         mode=WebRtcMode.SENDRECV,
@@ -123,24 +127,25 @@ elif option == "Record Audio":
         media_stream_constraints={"audio": True, "video": False},
         audio_frame_callback=audio_frame_callback,
     )
-    
-    # Check if any audio frames were captured (you might want to provide a button to finalize recording)
-    if len(audio_frames) > 0:
-        # Concatenate all audio frames along the first axis
-        audio_data = np.concatenate(audio_frames, axis=0)
-        
-        # Write the combined audio to a temporary .wav file using soundfile
-        import soundfile as sf
-        temp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".wav").name
-        sf.write(temp_path, audio_data, 44100, subtype='PCM_16')
-        
-        st.audio(temp_path, format="audio/wav")
-        
-        # Process the recorded audio
-        features = extract_features(temp_path)
-        if features is not None:
-            show_prediction(features)
 
+    # Provide a button to finish recording and process audio.
+    if st.button("Finish Recording"):
+        if audio_frames:
+            # Concatenate all the frames along axis 0.
+            audio_data = np.concatenate(audio_frames, axis=0)
+            
+            # Write the combined audio data to a temporary WAV file using soundfile.
+            temp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".wav").name
+            sf.write(temp_path, audio_data, 44100, subtype='PCM_16')
+            
+            st.audio(temp_path, format="audio/wav")
+            
+            # Process the recorded audio.
+            features = extract_features(temp_path)
+            if features is not None:
+                show_prediction(features)
+        else:
+            st.warning("No audio recorded.")
 
 # =====================
 # Footer
