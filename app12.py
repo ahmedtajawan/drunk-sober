@@ -18,10 +18,11 @@ audio_frames = []
 def audio_frame_callback(frame):
     global audio_frames, recording_finished
     if not recording_finished:
-        # Append each frame's raw audio data in 's16le' format
-        audio_frames.append(frame.to_ndarray(format="s16le"))
-    return frame  # Return the original frame unmodified
-
+        frame_data = frame.to_ndarray(format="s16le")
+        audio_frames.append(frame_data)
+        # For debugging: print frame shape to console (visible in browser console)
+        print("Captured frame with shape:", frame_data.shape)
+    return frame
 # 🎨 Streamlit Configuration
 # =====================
 st.set_page_config(page_title="Drunk Detection", layout="wide")
@@ -133,9 +134,10 @@ elif option == "Record Audio":
 
     webrtc_ctx = webrtc_streamer(
         key="recording",
-        mode=WebRtcMode.SENDRECV,
+        mode=WebRtcMode.SENDONLY,
         rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
         media_stream_constraints={"audio": True, "video": False},
+        disable_audio_playback=True,
         audio_frame_callback=audio_frame_callback,
     )
 
